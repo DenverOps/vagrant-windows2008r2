@@ -1,0 +1,12 @@
+source "https://supermarket.getchef.com"
+
+cookbook 'windows', github: 'joefitzgerald/windows'
+cookbook '7-zip', '~> 1.0.2'
+cookbook 'chocolatey', '~> 0.2.0'
+cookbook 'webpi', '~> 1.2.8'
+cookbook 'dotnetframework', github: 'joefitzgerald/dotnetframework'
+cookbook 'sqlce', '~> 1.0.0'
+cookbook 'visualstudio', github: 'joefitzgerald/visualstudio'
+cookbook 'minitest-handler', '~> 1.3.2'
+cookbook 'chocolatey-installer', github: 'joefitzgerald/chocolatey-installer'
+cookbook 'webpi-installer', github: 'joefitzgerald/webpi-installer'

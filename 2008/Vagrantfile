@@ -1,0 +1,156 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+ 
+Vagrant.configure("2") do |config|
+  config.vm.define "vagrant-windows"
+  config.vm.box = "windows2008r2"
+  
+  # You should be using the vagrant-windows Vagrant Plugin!
+  # Admin user name and password
+  config.winrm.username = "vagrant"
+  config.winrm.password = "vagrant"
+  
+  config.vm.guest = :windows  
+  config.windows.halt_timeout = 15
+ 
+  # Port forward WinRM and RDP
+    config.vm.communicator = "winrm"
+	
+  # Verify all HTTPS connections (recommended)
+  # ssl_verify_mode :verify_peer
+  # knife ssl check -c "c:\tmp\vagrant-chef-16\solo.rb"
+  
+  # Berkshelf
+  config.berkshelf.enabled = true
+  
+  # .NET 4.5
+  config.vm.provision :chef_solo do |chef|
+    chef.log_level = :debug
+    chef.file_cache_path = "c:/chef/cache"
+    chef.file_backup_path = "c:/chef/backup"
+    chef.add_recipe "windows::default"
+    chef.add_recipe "minitest-handler::default"
+    chef.add_recipe "windows::reboot_handler"
+    chef.add_recipe "dotnetframework::default"
+    chef.json={
+      "dotnetframework"=>{
+        "version" => "4.5.2",
+        "4.5.2"=>{
+          "url" => "c:/vagrant/cache/NDP452-KB2901907-x86-x64-AllOS-ENU.exe"
+        }
+      },
+      "windows"=>{
+        "reboot_timeout" => 15
+      }
+    }
+  end
+  
+  # SQLCE 4.0 SP1
+  config.vm.provision :chef_solo do |chef|
+    chef.log_level = :debug
+    chef.file_cache_path = "c:/chef/cache"
+    chef.file_backup_path = "c:/chef/backup"
+    chef.add_recipe "windows::default"
+    chef.add_recipe "minitest-handler::default"
+    chef.add_recipe "windows::reboot_handler"
+    chef.add_recipe "sqlce::default"
+    chef.json={
+      "windows"=>{
+        "reboot_timeout" => 15
+      }
+    }
+  end
+  
+  # Visual Studio 2012
+  config.vm.provision :chef_solo do |chef|
+    chef.log_level = :debug
+    chef.file_cache_path = "c:/chef/cache"
+    chef.file_backup_path = "c:/chef/backup"
+    chef.add_recipe "windows::default"
+    chef.add_recipe "minitest-handler::default"
+    chef.add_recipe "windows::reboot_handler"
+    chef.add_recipe "7-zip"
+    chef.add_recipe "visualstudio::default"
+    chef.json={
+      "visualstudio"=>{
+        "source" => "c:/vagrant/cache",
+        "edition" => "ultimate"
+      },
+      "windows"=>{
+        "reboot_timeout" => 15
+      },
+      "7-zip"=>{
+        "url" => "c:/vagrant/cache/7z920-x64.msi"
+      }
+    }
+  end
+  
+  # Visual Studio 2012 Update 3
+  config.vm.provision :chef_solo do |chef|
+    chef.log_level = :debug
+    chef.file_cache_path = "c:/chef/cache"
+    chef.file_backup_path = "c:/chef/backup"
+    chef.add_recipe "windows::default"
+    chef.add_recipe "minitest-handler::default"
+    chef.add_recipe "windows::reboot_handler"
+    chef.add_recipe "visualstudio::installupdate"
+    chef.json={
+      "visualstudio"=>{
+        "source" => "c:/vagrant/cache",
+        "edition" => "ultimate"
+      },
+      "windows"=>{
+        "reboot_timeout" => 15
+      },
+      "7-zip"=>{
+        "url" => "c:/vagrant/cache/7z920-x64.msi"
+      }
+    }
+  end
+  
+  # All The Rest
+  config.vm.provision :chef_solo do |chef|
+    chef.log_level = :debug
+    chef.file_cache_path = "c:/chef/cache"
+    chef.file_backup_path = "c:/chef/backup"
+    chef.add_recipe "windows::default"
+    chef.add_recipe "minitest-handler::default"
+    chef.add_recipe "windows::reboot_handler"
+    chef.add_recipe "chocolatey-installer"
+    chef.add_recipe "webpi-installer"
+    chef.json={
+      "chocolatey-installer"=>{
+        "packages"=> ['git', 'notepadplusplus', 'sourcetree', 'GoogleChrome', 'wixtoolset', 'javaruntime', 'resharper', 'beyondcompare', 'NugetPackageManager', 'ie10', 'rabbitmq', 'gb.MongoDB']
+      },
+      "webpi-installer"=>{
+        "packages"=> ['VWDOrVs11AzurePack', 'IIS7', 'WIF'],
+        "accepteula"=> true
+      },
+      "windows"=>{
+        "reboot_timeout" => 15
+      }      
+    }
+  end
+  
+  # Disable Vagrant User & Sysprep (Which also resets the local Administrator account)
+  config.vm.provision :shell, :inline => "Copy-Item -Path C:\\vagrant\\scripts\\sysprep-and-seal.ps1 -Destination C:\\tmp\\sysprep-and-seal.ps1; Set-ItemProperty -Path \"HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" -Name \"SysprepAndSeal\" -Value \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -File C:\\tmp\\sysprep-and-seal.ps1\"; cmd /c \"shutdown /r /t 15\""
+  
+  config.vm.provider :virtualbox do |v, override|
+  end
+ 
+  config.vm.provider :vmware_fusion do |v, override|
+    v.gui = true
+    v.vmx["memsize"] = "2048"
+    v.vmx["ethernet0.virtualDev"] = "vmxnet3"
+    v.vmx["RemoteDisplay.vnc.enabled"] = "false"
+    v.vmx["RemoteDisplay.vnc.port"] = "5900"
+  end
+ 
+  config.vm.provider :vmware_workstation do |v, override|
+    v.gui = true
+    v.vmx["memsize"] = "2048"
+    v.vmx["ethernet0.virtualDev"] = "vmxnet3"
+    v.vmx["RemoteDisplay.vnc.enabled"] = "false"
+    v.vmx["RemoteDisplay.vnc.port"] = "5900"
+  end
+end
